@@ -1,0 +1,56 @@
+pickupsByTaxiZonePUDF = taxiDF.groupBy("PULocationID") \
+    .agg(count("*").alias("totalTrips")) \
+    .join(taxiZonesDF, col("PULocationID") == col("LocationID")) \
+    .drop("LocationID", "service_zone") \
+    .orderBy(col("totalTrips").desc())
+
+pickupsByTaxiZonePUDF.show(3)
+
+ratesByTaxiZonePUDF = taxiDF.groupBy("PULocationID") \
+    .agg(count("RatecodeID").alias("ratecodeTotal")) \
+
+ratesByTaxiZonePUDF.show(3) 
+
+# 1b - Now we can group by borough. That's because one Borough have several Zones, and Borough info is more relevant (we think)
+pickupsByBoroughPUDF = pickupsByTaxiZonePUDF.groupBy(col("Borough")) \
+    .agg(sum(col("totalTrips")).alias("totalTrips")) \
+    .orderBy(col("totalTrips").desc())
+
+pickupsByBoroughPUDF.show(2)
+
+# Now we have to do the same for DOLocationIDs:
+pickupsByTaxiZoneDODF = taxiDF.groupBy("DOLocationID") \
+    .agg(count("*").alias("totalTrips")) \
+    .join(taxiZonesDF, col("DOLocationID") == col("LocationID")) \
+    .drop("LocationID", "service_zone") \
+    .orderBy(col("totalTrips").desc())
+
+pickupsByTaxiZoneDODF.show(3)
+
+# 1b - Now we can group by borough.
+pickupsByBoroughDODF = pickupsByTaxiZoneDODF.groupBy(col("Borough")) \
+    .agg(sum(col("totalTrips")).alias("totalTrips")) \
+    .orderBy(col("totalTrips").desc())
+
+pickupsByBoroughDODF.show(2)
+
+# Tips: drop and orderBy is just for make it more readable. The logic is groupBy -> agg -> join
+# We make th count("*") because we want to know EVERY different trips with no nulls in all columns. Depending on what we want, the logic may change at this point.
+
+
+"""
+Question 2: What are the peak hours for taxi?
+"""
+
+"""
+This is similar to the previous exercise. The only difference will be we have to group by hour this time. As we don't have the hour info directly in our DF, we have
+to process the tpep_pickup_datetime column first. The rest of the logic will be the same.
+"""
+
+pickupsByHourDF = taxiDF \
+    .withColumn("hour_of_day", hour(col("tpep_pickup_datetime"))) \
+    .groupBy("hour_of_day") \
+    .agg(count("*").alias("totalTrips")) \
+    .orderBy(col("totalTrips").desc())
+
+pickupsByHourDF.show(3)
