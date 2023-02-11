@@ -1,6 +1,43 @@
 version: '3'
 services:
   # Spark containers
+  spark-master:
+    image: spark-master:latest
+    ports:
+      - "4040:4040"
+      - "9090:9090"
+      - "7077:7077"
+    volumes:
+      - ../project:/opt/project
+    environment:
+      - "SPARK_LOCAL_IP=spark-master"
 
+  spark-worker:
+    image: spark-worker:latest
+    depends_on:
+      - spark-master
+    environment:
+      - SPARK_MASTER=spark://spark-master:7077
+      - SPARK_WORKER_CORES=1
+      - SPARK_WORKER_MEMORY=1G
+      - SPARK_DRIVER_MEMORY=128m
+      - SPARK_EXECUTOR_MEMORY=256m
+    volumes:
+      - ../project:/opt/project
 
   # MySQL containers
+  db:
+    image: mysql
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: edem
+      MYSQL_DATABASE: example
+      MYSQL_USER: spark
+      MYSQL_PASSWORD: spark
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
